@@ -1,1120 +1,333 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="theme-color" content="#000000">
-    <title>System 22 Setup</title>
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlN5c3RlbSAyMiBTZXR1cCIsCiAgInNob3J0X25hbWUiOiAiU3lzdGVtIDIyIiwKICAic3RhcnRfdXJsIjogIi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwMDAwMDAiLAogICJ0aGVtZV9jb2xvciI6ICIjMDAwMDAwIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCM2FXUjBhRDBpTWpBd0lpQm9aV2xuYUhROUlqSXdNQ0lnZG1sbGQwSnZlRDBpTUNBd0lESXdNQ0F5TURBaUlIaHRiRzV6UFNKb2RIUndPaTh2ZDNkM0xuY3pMbTl5Wnk4eU1EQXdMM04yWnlJK1BISmxZM1FnZUQwaU5UQWlJSGs5SWpVd0lpQjNhV1IwYUQwaU1UQXdJaUJvWldsbmFIUTlJakV3TUNJZ1ptbHNiRDBpSXpRMk5EWkZOU0l2UGp4MFpYaDBJSGc5SWpFd01DSWdlVDBpTVRBd0lpQm1iMjUwTFdaaGJXbHNlVDBpUVhKcFlXd2lJR1pwYkd3OUluZG9hWFJsSWlCMFpYaDBMV0Z1WTJodmNqMGliV2xrWkd4bElpQm1iMjUwTFhOcGVtVTlJalEwSWo0eU1qd3ZkR1Y0ZEQ0OEwzTjJaejQ9IiwKICAgICAgInNpemVzIjogIjE5MngxOTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0KfQ==">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+<script>
+    let currentStep = 1;
+    const totalSteps = 13;
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #000;
-            color: #fff;
-            overflow-x: hidden;
-            position: fixed;
-            width: 100%;
-            height: 100%;
-        }
+    let config = {
+        LANGUAGE: 'English',
+        ASSISTANT_NAME: 'Isaiah',
+        BUSINESS_NAME: '',
+        LOCATION: '',
+        RADIUS_MILES: null,
+        BUDGET_MIN: null,
+        WORK_CATEGORIES: [],
+        SERVICES_LIST: [],
+        OTHER_SERVICES: '',
+        LOGO_BASE64: '',
+        WORK_PHOTOS_BASE64: [],
+        OWNER_PHONE: '',
+        OWNER_EMAIL: '',
+        RESERVE_LOGO: true,
+        RESERVE_WEBSITE: true,
+        RESERVE_AUTO_ADS: true
+    };
 
-        #landing {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            animation: fadeOut 0.5s ease 3s forwards;
-        }
+    const categories = {
+        'General Handyman': ['drywall repair', 'painting', 'general repairs', 'fixture installations', 'door installation', 'trim work'],
+        'Plumbing': ['toilet repair', 'faucet replacement', 'sink installation', 'minor plumbing leak repair', 'unclogging drains'],
+        'Electrical': ['outlet/switch replacement', 'light fixture installation', 'ceiling fan installation', 'dimmer switch installation', 'smoke detector installation'],
+        'Carpentry': ['cabinet installation', 'shelving installation', 'deck building', 'fence building', 'trim and molding installation'],
+        'Flooring & Tile': ['tile work', 'flooring', 'floor installation (laminate/vinyl)', 'tile repair', 'grout cleaning'],
+        'Painting & Finishing': ['painting', 'wallpaper removal', 'caulking (kitchen/bath)', 'weatherproofing'],
+        'Home Improvement': ['kitchen renovation', 'bathroom renovation', 'window installation', 'gutter cleaning', 'pressure washing'],
+        'Outdoor & Exterior': ['roof repairs', 'fence building', 'deck repair', 'gutter repair', 'concrete patching'],
+        'Specialty Services': ['auto mechanical maintenance', 'locksmith services', 'junk removal (small loads)', 'appliance installation', 'smart home device setup']
+    };
 
-        #landing-logo {
-            width: 280px;
-            max-width: 75vw;
-            opacity: 0;
-            transform: translateX(-100vw);
-            animation: wipeIn 1s ease 0.3s forwards, wipeOut 1s ease 2s forwards;
-            filter: drop-shadow(0 0 20px rgba(79, 70, 229, 0.8)) drop-shadow(0 0 40px rgba(6, 182, 212, 0.6));
-        }
+    let selectedCategories = [];
+    let availableServices = [];
+    let workPhotosArray = [];
 
-        @keyframes wipeIn {
-            to {
-                opacity: 1;
-                transform: translateX(0);
+    // Fix repeated file upload not triggering on mobile
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.file-upload')) {
+            const input = e.target.closest('.file-upload').nextElementSibling;
+            if (input && input.type === 'file') {
+                input.value = ''; // reset to force re-trigger
             }
         }
-
-        @keyframes wipeOut {
-            to {
-                opacity: 0;
-                transform: translateX(100vw);
-            }
-        }
-
-        @keyframes fadeOut {
-            to {
-                opacity: 0;
-                visibility: hidden;
-            }
-        }
-
-        #app {
-            opacity: 0;
-            animation: fadeIn 0.5s ease 3.5s forwards;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-            }
-        }
-
-        header {
-            background: #000;
-            padding: 16px;
-            text-align: center;
-            border-bottom: 1px solid #333;
-            flex-shrink: 0;
-        }
-
-        header h1 {
-            font-size: 1.3rem;
-            letter-spacing: 2px;
-            font-weight: bold;
-        }
-
-        .progress-container {
-            background: #000;
-            padding: 16px;
-            border-bottom: 1px solid #333;
-            flex-shrink: 0;
-        }
-
-        .progress-bar {
-            height: 6px;
-            background: #1a1a1a;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #4F46E5, #06B6D4);
-            border-radius: 3px;
-            transition: width 0.3s ease;
-            box-shadow: 0 0 10px rgba(6, 182, 212, 0.6);
-        }
-
-        .progress-text {
-            text-align: center;
-            margin-top: 8px;
-            color: #06B6D4;
-            font-size: 0.85rem;
-            font-weight: bold;
-        }
-
-        .content {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch;
-            padding: 24px 16px 80px;
-        }
-
-        .step {
-            display: none;
-            min-height: 100%;
-        }
-
-        .step.active {
-            display: flex;
-            flex-direction: column;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .step-title {
-            font-size: 1.6rem;
-            margin-bottom: 32px;
-            text-align: center;
-            font-weight: bold;
-            line-height: 1.3;
-        }
-
-        .step-subtitle {
-            font-size: 0.9rem;
-            color: #666;
-            text-align: center;
-            margin-top: -24px;
-            margin-bottom: 32px;
-        }
-
-        .button-group {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .button-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .btn {
-            padding: 50px 20px;
-            font-size: 1.4rem;
-            border: 2px solid #333;
-            background: #1a1a1a;
-            color: #999;
-            cursor: pointer;
-            border-radius: 12px;
-            transition: all 0.2s ease;
-            font-weight: bold;
-            touch-action: manipulation;
-            user-select: none;
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .btn.selected {
-            background: #4F46E5;
-            color: #fff;
-            border-color: #06B6D4;
-            border-width: 3px;
-        }
-
-        .btn-small {
-            padding: 20px 16px;
-            font-size: 1.1rem;
-        }
-
-        .btn-category {
-            padding: 30px 16px;
-            font-size: 1rem;
-        }
-
-        input[type="text"],
-        input[type="email"],
-        input[type="tel"],
-        input[type="number"] {
-            width: 100%;
-            padding: 18px 16px;
-            font-size: 1.1rem;
-            background: #1a1a1a;
-            border: 2px solid #333;
-            border-radius: 12px;
-            color: #fff;
-            margin-bottom: 16px;
-        }
-
-        input::placeholder {
-            color: #444;
-            font-size: 0.95rem;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #06B6D4;
-            box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
-        }
-
-        @media screen and (max-width: 767px) {
-            input[type="text"],
-            input[type="email"],
-            input[type="tel"],
-            input[type="number"] {
-                font-size: 16px;
-            }
-        }
-
-        .services-list {
-            max-height: 50vh;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 8px;
-        }
-
-        .service-item {
-            display: flex;
-            align-items: center;
-            padding: 14px 12px;
-            border-bottom: 1px solid #222;
-            min-height: 52px;
-        }
-
-        .service-item:last-child {
-            border-bottom: none;
-        }
-
-        .service-item input[type="checkbox"] {
-            width: 24px;
-            height: 24px;
-            margin-right: 12px;
-            cursor: pointer;
-            accent-color: #4F46E5;
-            flex-shrink: 0;
-        }
-
-        .service-item label {
-            cursor: pointer;
-            flex: 1;
-            font-size: 0.95rem;
-            line-height: 1.3;
-        }
-
-        .file-upload {
-            border: 2px dashed #4F46E5;
-            background: #1a1a1a;
-            border-radius: 12px;
-            padding: 50px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            touch-action: manipulation;
-        }
-
-        .file-upload:active {
-            border-color: #06B6D4;
-            background: #222;
-        }
-
-        .upload-icon {
-            font-size: 3.5rem;
-            margin-bottom: 12px;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        .photo-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-top: 16px;
-        }
-
-        .photo-thumb {
-            position: relative;
-            aspect-ratio: 1;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 2px solid #06B6D4;
-        }
-
-        .photo-thumb img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .photo-remove {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            padding: 16px;
-            background: #1a1a1a;
-            border: 2px solid #333;
-            border-radius: 12px;
-            margin-bottom: 12px;
-        }
-
-        .checkbox-item input {
-            width: 24px;
-            height: 24px;
-            margin-right: 12px;
-            accent-color: #4F46E5;
-        }
-
-        .checkbox-item label {
-            flex: 1;
-            font-size: 1rem;
-        }
-
-        .review-item {
-            background: #1a1a1a;
-            border: 1px solid #4F46E5;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-        }
-
-        .review-item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .review-label {
-            color: #06B6D4;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-
-        .review-value {
-            font-size: 1rem;
-            line-height: 1.4;
-        }
-
-        .edit-link {
-            color: #4F46E5;
-            cursor: pointer;
-            font-size: 0.85rem;
-            padding: 4px 8px;
-            touch-action: manipulation;
-        }
-
-        .nav-buttons {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 16px;
-            padding-bottom: calc(12px + env(safe-area-inset-bottom));
-            border-top: 1px solid #333;
-            background: #000;
-            z-index: 100;
-        }
-
-        .nav-btn {
-            padding: 16px 28px;
-            font-size: 1rem;
-            font-weight: bold;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            touch-action: manipulation;
-            user-select: none;
-        }
-
-        .nav-btn:active {
-            transform: scale(0.96);
-        }
-
-        .nav-btn-back {
-            background: #1a1a1a;
-            color: #fff;
-            border: 1px solid #333;
-        }
-
-        .nav-btn-next {
-            background: #4F46E5;
-            color: #fff;
-            border: 2px solid #06B6D4;
-            flex: 1;
-            margin-left: 12px;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: #1a1a1a;
-            border: 2px solid #4F46E5;
-            border-radius: 16px;
-            padding: 32px 24px;
-            text-align: center;
-            max-width: 400px;
-            width: 100%;
-        }
-
-        .modal-icon {
-            font-size: 4rem;
-            margin-bottom: 16px;
-        }
-
-        .modal-title {
-            font-size: 1.5rem;
-            margin-bottom: 12px;
-            color: #fff;
-        }
-
-        .modal-text {
-            color: #999;
-            margin-bottom: 24px;
-            line-height: 1.5;
-        }
-
-        .modal-btn {
-            width: 100%;
-            padding: 16px;
-            background: #4F46E5;
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            touch-action: manipulation;
-        }
-
-        .services-header {
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .default-btn {
-            display: block;
-            margin: 0 auto 24px;
-            padding: 12px 28px;
-            background: transparent;
-            border: 1px solid #06B6D4;
-            color: #06B6D4;
-            cursor: pointer;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            touch-action: manipulation;
-        }
-
-        @supports (padding: env(safe-area-inset-bottom)) {
-            .content {
-                padding-bottom: calc(80px + env(safe-area-inset-bottom));
-            }
-        }
-    </style>
-</head>
-<body>
-    <div id="landing">
-        <svg id="landing-logo" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <pattern id="circuit" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
-                    <circle cx="5" cy="5" r="2" fill="#4F46E5" opacity="0.3"/>
-                    <line x1="5" y1="5" x2="25" y2="5" stroke="#06B6D4" stroke-width="0.5" opacity="0.3"/>
-                    <line x1="25" y1="5" x2="25" y2="25" stroke="#06B6D4" stroke-width="0.5" opacity="0.3"/>
-                    <circle cx="25" cy="25" r="2" fill="#4F46E5" opacity="0.3"/>
-                </pattern>
-            </defs>
-            <rect width="800" height="600" fill="url(#circuit)"/>
-            <text x="400" y="280" font-family="Arial Black, sans-serif" font-size="120" font-weight="bold" text-anchor="middle" fill="#fff">system</text>
-            <text x="400" y="420" font-family="Arial Black, sans-serif" font-size="200" font-weight="bold" text-anchor="middle" fill="#fff">22</text>
-            <line x1="100" y1="450" x2="700" y2="450" stroke="#4F46E5" stroke-width="4"/>
-            <line x1="100" y1="460" x2="700" y2="460" stroke="#06B6D4" stroke-width="2"/>
-        </svg>
-    </div>
-
-    <div id="app">
-        <header>
-            <h1>SYSTEM 22 SETUP</h1>
-        </header>
-
-        <div class="progress-container">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
-            </div>
-            <div class="progress-text" id="progressText">0% Complete</div>
-        </div>
-
-        <div class="content">
-            <!-- Step 1: Language -->
-            <div class="step active" data-step="1">
-                <h2 class="step-title">Select your preferred language</h2>
-                <div class="button-group">
-                    <button class="btn selected" onclick="selectLanguage('English')">English</button>
-                    <button class="btn" onclick="selectLanguage('Spanish')">Español</button>
-                </div>
-            </div>
-
-            <!-- Step 2: Assistant Name -->
-            <div class="step" data-step="2">
-                <h2 class="step-title">Choose your assistant's name</h2>
-                <div class="button-grid">
-                    <button class="btn selected btn-small" onclick="selectName('Isaiah')">Isaiah</button>
-                    <button class="btn btn-small" onclick="selectName('Kai')">Kai</button>
-                    <button class="btn btn-small" onclick="selectName('Mateo')">Mateo</button>
-                    <button class="btn btn-small" onclick="selectName('Brock')">Brock</button>
-                </div>
-                <input type="text" id="customName" placeholder="Or enter custom name" oninput="handleCustomName(this.value)">
-            </div>
-
-            <!-- Step 3: Business Name -->
-            <div class="step" data-step="3">
-                <h2 class="step-title">What's your business name?</h2>
-                <input type="text" id="businessName" placeholder="e.g. Handy Man in a Van">
-            </div>
-
-            <!-- Step 4: Location -->
-            <div class="step" data-step="4">
-                <h2 class="step-title">Where is your business located?</h2>
-                <input type="text" id="location" placeholder="e.g. West Covina, CA">
-            </div>
-
-            <!-- Step 5: Service Radius -->
-            <div class="step" data-step="5">
-                <h2 class="step-title">Service radius (miles)</h2>
-                <input type="number" id="radius" placeholder="e.g. 50" inputmode="numeric">
-            </div>
-
-            <!-- Step 6: Minimum Budget -->
-            <div class="step" data-step="6">
-                <h2 class="step-title">Minimum budget ($)</h2>
-                <input type="number" id="budget" placeholder="e.g. 200" inputmode="numeric">
-            </div>
-
-            <!-- Step 7: Work Categories -->
-            <div class="step" data-step="7">
-                <h2 class="step-title">What type of work do you mainly do?</h2>
-                <p class="step-subtitle">Select one or more categories</p>
-                <div class="button-grid" id="categoryGrid"></div>
-            </div>
-
-            <!-- Step 8: Specific Services -->
-            <div class="step" data-step="8">
-                <h2 class="step-title">Services you offer</h2>
-                <div class="services-header">
-                    <button class="default-btn" onclick="selectAllServices()">Select All</button>
-                    <button class="default-btn" onclick="clearAllServices()">Clear All</button>
-                </div>
-                <div class="services-list" id="servicesList"></div>
-                <input type="text" id="otherServices" placeholder="Other services (comma-separated)" style="margin-top: 16px;">
-            </div>
-
-            <!-- Step 9: Logo Upload -->
-            <div class="step" data-step="9">
-                <h2 class="step-title">Upload your business logo</h2>
-                <p class="step-subtitle">(optional)</p>
-                <div class="file-upload" id="logoUpload" onclick="document.getElementById('logoFile').click()">
-                    <div class="upload-icon">📷</div>
-                    <div>Tap to upload logo</div>
-                </div>
-                <input type="file" id="logoFile" accept="image/*" onchange="handleLogoUpload(event)">
-                <div id="logoPreview"></div>
-            </div>
-
-            <!-- Step 10: Work Photos -->
-            <div class="step" data-step="10">
-                <h2 class="step-title">Upload photos of your work</h2>
-                <p class="step-subtitle">(optional, multiple photos)</p>
-                <div class="file-upload" onclick="document.getElementById('workPhotos').click()">
-                    <div class="upload-icon">🖼️</div>
-                    <div>Tap to upload photos</div>
-                </div>
-                <input type="file" id="workPhotos" accept="image/*" multiple onchange="handleWorkPhotos(event)">
-                <div class="photo-grid" id="photoGrid"></div>
-            </div>
-
-            <!-- Step 11: Owner Contact -->
-            <div class="step" data-step="11">
-                <h2 class="step-title">Your contact information</h2>
-                <input type="tel" id="ownerPhone" placeholder="e.g. +16267274336" required>
-                <input type="email" id="ownerEmail" placeholder="e.g. isaiah.handy.man.in.a.van@gmail.com" required>
-            </div>
-
-            <!-- Step 12: Reservations -->
-            <div class="step" data-step="12">
-                <h2 class="step-title">Optional features</h2>
-                <p class="step-subtitle">We can generate these for you later</p>
-                <div class="checkbox-item">
-                    <input type="checkbox" id="reserveLogo" checked>
-                    <label for="reserveLogo">Generate logo options for me</label>
-                </div>
-                <div class="checkbox-item">
-                    <input type="checkbox" id="reserveWebsite" checked>
-                    <label for="reserveWebsite">Generate full website for me</label>
-                </div>
-                <div class="checkbox-item">
-                    <input type="checkbox" id="reserveAds" checked>
-                    <label for="reserveAds">Generate ready-to-post ad text</label>
-                </div>
-            </div>
-
-            <!-- Step 13: Review -->
-            <div class="step" data-step="13">
-                <h2 class="step-title">Review Your Setup</h2>
-                <div id="reviewContent"></div>
-            </div>
-        </div>
-
-        <div class="nav-buttons">
-            <button class="nav-btn nav-btn-back" id="backBtn" onclick="previousStep()">← Back</button>
-            <button class="nav-btn nav-btn-next" id="nextBtn" onclick="nextStep()">Next →</button>
-        </div>
-    </div>
-
-    <div class="modal" id="successModal">
-        <div class="modal-content">
-            <div class="modal-icon">✓</div>
-            <h3 class="modal-title">Setup Complete!</h3>
-            <p class="modal-text" id="modalMessage">Your assistant is ready. Check back later for generated items.</p>
-            <button class="modal-btn" onclick="closeModal()">Done</button>
-        </div>
-    </div>
-
-    <script>
-        let currentStep = 1;
-        const totalSteps = 13;
-        let config = {
-            LANGUAGE: 'English',
-            ASSISTANT_NAME: 'Isaiah',
-            BUSINESS_NAME: '',
-            LOCATION: '',
-            RADIUS_MILES: null,
-            BUDGET_MIN: null,
-            WORK_CATEGORIES: [],
-            SERVICES_LIST: [],
-            OTHER_SERVICES: '',
-            LOGO_BASE64: '',
-            WORK_PHOTOS_BASE64: [],
-            OWNER_PHONE: '',
-            OWNER_EMAIL: '',
-            RESERVE_LOGO: true,
-            RESERVE_WEBSITE: true,
-            RESERVE_ADS: true
-        };
-
-        const categories = {
-            'General Handyman': ['drywall repair', 'painting', 'general repairs', 'fixture installations', 'door installation', 'trim work'],
-            'Plumbing': ['toilet repair', 'faucet replacement', 'sink installation', 'minor plumbing leak repair', 'unclogging drains'],
-            'Electrical': ['outlet/switch replacement', 'light fixture installation', 'ceiling fan installation', 'dimmer switch installation', 'smoke detector installation'],
-            'Carpentry': ['cabinet installation', 'shelving installation', 'deck building', 'fence building', 'trim and molding installation'],
-            'Flooring & Tile': ['tile work', 'flooring', 'floor installation (laminate/vinyl)', 'tile repair', 'grout cleaning'],
-            'Painting & Finishing': ['painting', 'wallpaper removal', 'caulking (kitchen/bath)', 'weatherproofing'],
-            'Home Improvement': ['kitchen renovation', 'bathroom renovation', 'window installation', 'gutter cleaning', 'pressure washing'],
-            'Outdoor & Exterior': ['roof repairs', 'fence building', 'deck repair', 'gutter repair', 'concrete patching'],
-            'Specialty Services': ['auto mechanical maintenance', 'locksmith services', 'junk removal (small loads)', 'appliance installation', 'smart home device setup']
-        };
-
-        let selectedCategories = [];
-        let availableServices = [];
-        let workPhotosArray = [];
-
-        window.onload = () => {
-            initializeCategories();
-            updateProgress();
-            updateButtons();
-        };
-
-        function initializeCategories() {
-            const grid = document.getElementById('categoryGrid');
-            Object.keys(categories).forEach(cat => {
-                const btn = document.createElement('button');
-                btn.className = 'btn btn-category';
-                btn.textContent = cat;
-                btn.onclick = () => toggleCategory(cat, btn);
-                grid.appendChild(btn);
-            });
-        }
-
-        function toggleCategory(cat, btn) {
-            if (selectedCategories.includes(cat)) {
-                selectedCategories = selectedCategories.filter(c => c !== cat);
-                btn.classList.remove('selected');
-            } else {
-                selectedCategories.push(cat);
-                btn.classList.add('selected');
-            }
-            config.WORK_CATEGORIES = selectedCategories;
-        }
-
-        function buildServicesList() {
-            availableServices = [];
-            selectedCategories.forEach(cat => {
-                availableServices = availableServices.concat(categories[cat]);
-            });
-            availableServices = [...new Set(availableServices)];
-
-            const list = document.getElementById('servicesList');
-            list.innerHTML = '';
-            availableServices.forEach((service, index) => {
-                const item = document.createElement('div');
-                item.className = 'service-item';
-                item.innerHTML = `
-                    <input type="checkbox" id="service-${index}" checked onchange="updateServiceSelection()">
-                    <label for="service-${index}">${service}</label>
-                `;
-                list.appendChild(item);
-            });
-            updateServiceSelection();
-        }
-
-        function updateServiceSelection() {
-            config.SERVICES_LIST = availableServices.filter((_, index) => 
-                document.getElementById(`service-${index}`)?.checked
-            );
-        }
-
-        function selectAllServices() {
-            availableServices.forEach((_, index) => {
-                const checkbox = document.getElementById(`service-${index}`);
-                if (checkbox) checkbox.checked = true;
-            });
-            updateServiceSelection();
-        }
-
-        function clearAllServices() {
-            availableServices.forEach((_, index) => {
-                const checkbox = document.getElementById(`service-${index}`);
-                if (checkbox) checkbox.checked = false;
-            });
-            updateServiceSelection();
-        }
-
-        function selectLanguage(lang) {
-            config.LANGUAGE = lang;
-            document.querySelectorAll('[data-step="1"] .btn').forEach(btn => {
-                btn.classList.remove('selected');
-            });
-            event.target.classList.add('selected');
-        }
-
-        function selectName(name) {
-            config.ASSISTANT_NAME = name;
-            document.getElementById('customName').value = '';
-            document.querySelectorAll('[data-step="2"] .btn').forEach(btn => {
-                btn.classList.remove('selected');
-            });
-            event.target.classList.add('selected');
-        }
-
-        function handleCustomName(value) {
-            if (value.trim()) {
-                config.ASSISTANT_NAME = value.trim();
-                document.querySelectorAll('[data-step="2"] .btn').forEach(btn => {
-                    btn.classList.remove('selected');
-                });
-            }
-        }
-
-        function handleLogoUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                config.LOGO_BASE64 = e.target.result;
-                document.getElementById('logoUpload').innerHTML = `
-                    <div class="upload-icon" style="color: #06B6D4;">✓</div>
-                    <div>Logo uploaded</div>
-                `;
-                document.getElementById('logoPreview').innerHTML = `
-                    <div style="text-align: center; margin-top: 16px;">
-                        <img src="${e.target.result}" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #06B6D4;">
-                    </div>
-                `;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function handleWorkPhotos(event) {
-            const files = Array.from(event.target.files);
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    workPhotosArray.push(e.target.result);
-                    config.WORK_PHOTOS_BASE64 = workPhotosArray;
-                    displayPhotoGrid();
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        function displayPhotoGrid() {
-            const grid = document.getElementById('photoGrid');
-            grid.innerHTML = '';
-            workPhotosArray.forEach((photo, index) => {
-                const div = document.createElement('div');
-                div.className = 'photo-thumb';
-                div.innerHTML = `
-                    <img src="${photo}">
-                    <button class="photo-remove" onclick="removePhoto(${index})">×</button>
-                `;
-                grid.appendChild(div);
-            });
-        }
-
-        function removePhoto(index) {
-            workPhotosArray.splice(index, 1);
-            config.WORK_PHOTOS_BASE64 = workPhotosArray;
-            displayPhotoGrid();
-        }
-
-        function updateProgress() {
-            const progress = (currentStep / totalSteps) * 100;
-            document.getElementById('progressFill').style.width = progress + '%';
-            document.getElementById('progressText').textContent = Math.round(progress) + '% Complete';
-        }
-
-        function updateButtons() {
-            const backBtn = document.getElementById('backBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            
-            backBtn.style.display = currentStep === 1 ? 'none' : 'block';
-            nextBtn.textContent = currentStep === totalSteps ? 'Submit ✓' : 'Next →';
-        }
-
-        function nextStep() {
-            if (currentStep === 3) {
-                config.BUSINESS_NAME = document.getElementById('businessName').value.trim();
-            }
-            if (currentStep === 4) {
-                config.LOCATION = document.getElementById('location').value.trim();
-            }
-            if (currentStep === 5) {
-                const radius = document.getElementById('radius').value;
-                config.RADIUS_MILES = radius ? parseInt(radius) : null;
-            }
-            if (currentStep === 6) {
-                const budget = document.getElementById('budget').value;
-                config.BUDGET_MIN = budget ? parseInt(budget) : null;
-            }
-            if (currentStep === 7) {
-                if (selectedCategories.length === 0) {
-                    alert('Please select at least one work category');
-                    return;
-                }
-                buildServicesList();
-            }
-            if (currentStep === 8) {
-                config.OTHER_SERVICES = document.getElementById('otherServices').value.trim();
-            }
-            if (currentStep === 11) {
-                config.OWNER_PHONE = document.getElementById('ownerPhone').value.trim();
-                config.OWNER_EMAIL = document.getElementById('ownerEmail').value.trim();
-                if (!config.OWNER_PHONE || !config.OWNER_EMAIL) {
-                    alert('Please enter your phone and email');
-                    return;
-                }
-            }
-            if (currentStep === 12) {
-                config.RESERVE_LOGO = document.getElementById('reserveLogo').checked;
-                config.RESERVE_WEBSITE = document.getElementById('reserveWebsite').checked;
-                config.RESERVE_ADS = document.getElementById('reserveAds').checked;
-            }
-
-            if (currentStep === totalSteps) {
-                submitOnboarding();
-                return;
-            }
-
-            if (currentStep === 12) {
-                showReview();
-            }
-
-            document.querySelector(`[data-step="${currentStep}"]`).classList.remove('active');
-            currentStep++;
-            document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
-            updateProgress();
-            updateButtons();
-            document.querySelector('.content').scrollTop = 0;
-        }
-
-        function previousStep() {
-            if (currentStep === 1) return;
-            
-            document.querySelector(`[data-step="${currentStep}"]`).classList.remove('active');
-            currentStep--;
-            document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
-            updateProgress();
-            updateButtons();
-            document.querySelector('.content').scrollTop = 0;
-        }
-
-        function showReview() {
-            const reviewContent = document.getElementById('reviewContent');
-            reviewContent.innerHTML = `
-                <div class="review-item">
-                    <div class="review-item-header">
-                        <span class="review-label">Language</span>
-                        <span class="edit-link" onclick="goToStep(1)">Edit</span>
-                    </div>
-                    <div class="review-value">${config.LANGUAGE}</div>
-                </div>
-                <div class="review-item">
-                    <div class="review-item-header">
-                        <span class="review-label">Assistant Name</span>
-                        <span class="edit-link" onclick="goToStep(2)">Edit</span>
-                    </div>
-                    <div class="review-value">${config.ASSISTANT_NAME}</div>
-                </div>
-                <div class="review-item">
-                    <div class="review-item-header">
-                        <span class="review-label">Business Name</span>
-                        <span class="edit-link" onclick="goToStep(3)">Edit</span>
-                    </div>
-                    <div class="review-value">${config.BUSINESS_NAME || 'Not provided'}</div>
-                </div>
-                <div class="review-item">
-                    <div class="review-item-header">
-                        <span class="review-label">Location</span>
-                        <span class="edit-link" onclick="goToStep(4)">Edit</span>
-                    </div>
-                    <div class="review-value">${config.LOCATION || 'Not provided'}</div>
-                </div>
-                <div class="review-item">
-                    <div class="review-item-header">
-                        <span class="review-label">Service Radius</span>
-                        <span class="edit-link" onclick="goToStep(5)">Edit</span>
-                    </div>
-                    <div class="review-value">${config.RADIUS_MILES ? config.RADIUS_MILES + ' miles' : 'Not provided'}</div>
-                </div>
-                <div class="review-item">
-                    <div class="review-item-header">
-                        <span class="review-label">Minimum Budget</span>
-                        <span class="edit-link" onclick="goToStep(6)">Edit</span>
-                    </div>
-                    <div class="review-value">${config.BUDGET_MIN ? '$' + config.BUDGET_MIN : 'Not provided'}</div>
-                </div>
-                <div class="review-item">
-                    <div class="review-item-header">
-                        <span class="review-label">Work Categories</span>
-                        <span class="edit-link" onclick="goToStep(7)">Edit</span>
-                    </div>
-                    <div class="review-value">${config.WORK_CATEGORIES.join(', ')}</div>
-                </div>
-                <div class="review-item">
-                    <div class="review-item-header">
-                        <span class="review-label">Services</span>
-                        <span class="edit-link" onclick="goToStep(8)">Edit</span>
-                    </div>
-                    <div class="review-value">${config.SERVICES_LIST.length} selected</div>
-                </div>
-                <div class="review-item">
-                    <div class="review-item-header">
-                        <span class="review-label">Logo</span>
-                        <span class="edit-link" onclick="goToStep(9)">Edit</span>
-                    </div>
-                    <div class="review-value">${config.LOGO_BASE64 ? 'Uploaded ✓' : 'Not uploaded'}</div>
-                </div>
-                <div class="review-item">
-                    <div class="review-item-header">
-                        <span class="review-label">Work Photos</span>
-                        <span class="edit-link" onclick="goToStep(10)">Edit</span>
-                    </div>
-                    <div class="review-value">${config.WORK_PHOTOS_BASE64.length} photos</div>
-                </div>
-                <div class="review-item">
-                    <div class="review-item-header">
-                        <span class="review-label">Contact</span>
-                        <span class="edit-link" onclick="goToStep(11)">Edit</span>
-                    </div>
-                    <div class="review-value">${config.OWNER_PHONE}<br>${config.OWNER_EMAIL}</div>
+    });
+
+    window.onload = () => {
+        initializeCategories();
+        updateProgress();
+        updateButtons();
+    };
+
+    function initializeCategories() {
+        const grid = document.getElementById('categoryGrid');
+        Object.keys(categories).forEach(cat => {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-category';
+            btn.textContent = cat;
+            btn.onclick = () => toggleCategory(cat, btn);
+            grid.appendChild(btn);
+        });
+    }
+
+    function toggleCategory(cat, btn) {
+        if (selectedCategories.includes(cat)) {
+            selectedCategories = selectedCategories.filter(c => c !== cat);
+            btn.classList.remove('selected');
+        } else {
+            selectedCategories.push(cat);
+            btn.classList.add('selected');
+        }
+        config.WORK_CATEGORIES = selectedCategories;
+    }
+
+    function buildServicesList() {
+        availableServices = [];
+        selectedCategories.forEach(cat => {
+            availableServices = availableServices.concat(categories[cat]);
+        });
+        availableServices = [...new Set(availableServices)];
+        const list = document.getElementById('servicesList');
+        list.innerHTML = '';
+        availableServices.forEach((service, index) => {
+            const item = document.createElement('div');
+            item.className = 'service-item';
+            item.innerHTML = `
+                <input type="checkbox" id="service-${index}" checked onchange="updateServiceSelection()">
+                <label for="service-${index}">${service}</label>
+            `;
+            list.appendChild(item);
+        });
+        updateServiceSelection();
+    }
+
+    function updateServiceSelection() {
+        config.SERVICES_LIST = availableServices.filter((_, index) =>
+            document.getElementById(`service-${index}`)?.checked
+        );
+    }
+
+    function selectAllServices() {
+        availableServices.forEach((_, index) => {
+            const checkbox = document.getElementById(`service-${index}`);
+            if (checkbox) checkbox.checked = true;
+        });
+        updateServiceSelection();
+    }
+
+    function clearAllServices() {
+        availableServices.forEach((_, index) => {
+            const checkbox = document.getElementById(`service-${index}`);
+            if (checkbox) checkbox.checked = false;
+        });
+        updateServiceSelection();
+    }
+
+    function selectLanguage(lang) {
+        config.LANGUAGE = lang;
+        document.querySelectorAll('[data-step="1"] .btn').forEach(btn => btn.classList.remove('selected'));
+        event.target.classList.add('selected');
+    }
+
+    function selectName(name) {
+        config.ASSISTANT_NAME = name;
+        document.getElementById('customName').value = '';
+        document.querySelectorAll('[data-step="2"] .btn').forEach(btn => btn.classList.remove('selected'));
+        event.target.classList.add('selected');
+    }
+
+    function handleCustomName(value) {
+        if (value.trim()) {
+            config.ASSISTANT_NAME = value.trim();
+            document.querySelectorAll('[data-step="2"] .btn').forEach(btn => btn.classList.remove('selected'));
+        }
+    }
+
+    function handleLogoUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            config.LOGO_BASE64 = e.target.result;
+            document.getElementById('logoUpload').innerHTML = `
+                <div class="upload-icon" style="color: #0A6B7A;">✓</div>
+                <div>Logo uploaded</div>
+            `;
+            document.getElementById('logoPreview').innerHTML = `
+                <div style="text-align: center; margin-top: 16px;">
+                    <img src="${e.target.result}" style="max-width: 200px; max-height: 200px; border-radius: 12px; border: 2px solid #0A6B7A;">
                 </div>
             `;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function handleWorkPhotos(event) {
+        const files = Array.from(event.target.files);
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                workPhotosArray.push(e.target.result);
+                config.WORK_PHOTOS_BASE64 = workPhotosArray;
+                displayPhotoGrid();
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function displayPhotoGrid() {
+        const grid = document.getElementById('photoGrid');
+        grid.innerHTML = '';
+        workPhotosArray.forEach((photo, index) => {
+            const div = document.createElement('div');
+            div.className = 'photo-thumb';
+            div.innerHTML = `
+                <img src="${photo}">
+                <button class="photo-remove" onclick="removePhoto(${index})">×</button>
+            `;
+            grid.appendChild(div);
+        });
+    }
+
+    function removePhoto(index) {
+        workPhotosArray.splice(index, 1);
+        config.WORK_PHOTOS_BASE64 = workPhotosArray;
+        displayPhotoGrid();
+    }
+
+    function updateProgress() {
+        const progress = (currentStep / totalSteps) * 100;
+        document.getElementById('progressFill').style.width = progress + '%';
+        document.getElementById('progressText').textContent = Math.round(progress) + '% Complete';
+    }
+
+    function updateButtons() {
+        const backBtn = document.getElementById('backBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        backBtn.style.display = currentStep === 1 ? 'none' : 'block';
+        nextBtn.textContent = currentStep === totalSteps ? 'Submit ✓' : 'Next →';
+    }
+
+    function nextStep() {
+        if (currentStep === 3) config.BUSINESS_NAME = document.getElementById('businessName').value.trim();
+        if (currentStep === 4) config.LOCATION = document.getElementById('location').value.trim();
+        if (currentStep === 5) {
+            const radius = document.getElementById('radius').value;
+            config.RADIUS_MILES = radius ? parseInt(radius) : null;
         }
-
-        function goToStep(step) {
-            document.querySelector(`[data-step="${currentStep}"]`).classList.remove('active');
-            currentStep = step;
-            document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
-            updateProgress();
-            updateButtons();
-            document.querySelector('.content').scrollTop = 0;
+        if (currentStep === 6) {
+            const budget = document.getElementById('budget').value;
+            config.BUDGET_MIN = budget ? parseInt(budget) : null;
         }
-
-        async function submitOnboarding() {
-            try {
-                const response = await fetch('http://192.168.1.51:5000/onboard', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(config)
-                });
-
-                if (response.ok) {
-                    document.getElementById('modalMessage').textContent = 
-                        'Setup complete! Your assistant is ready. Check back later for generated items.';
-                    document.getElementById('successModal').classList.add('active');
-                } else {
-                    throw new Error('Server returned an error');
-                }
-            } catch (error) {
-                document.getElementById('modalMessage').textContent = 
-                    'Error submitting setup. Please check your connection and try again.';
-                document.getElementById('successModal').classList.add('active');
+        if (currentStep === 7) {
+            if (selectedCategories.length === 0) {
+                alert('Please select at least one work category');
+                return;
+            }
+            buildServicesList();
+        }
+        if (currentStep === 8) config.OTHER_SERVICES = document.getElementById('otherServices').value.trim();
+        if (currentStep === 11) {
+            config.OWNER_PHONE = document.getElementById('ownerPhone').value.trim();
+            config.OWNER_EMAIL = document.getElementById('ownerEmail').value.trim();
+            if (!config.OWNER_PHONE || !config.OWNER_EMAIL) {
+                alert('Please enter your phone and email');
+                return;
             }
         }
-
-        function closeModal() {
-            document.getElementById('successModal').classList.remove('active');
+        if (currentStep === 12) {
+            config.RESERVE_LOGO = document.getElementById('reserveLogo').checked;
+            config.RESERVE_WEBSITE = document.getElementById('reserveWebsite').checked;
+            config.RESERVE_AUTO_ADS = document.getElementById('reserveAutoAds').checked;
         }
+        if (currentStep === totalSteps) {
+            submitOnboarding();
+            return;
+        }
+        if (currentStep === 12) showReview();
+        document.querySelector(`[data-step="${currentStep}"]`).classList.remove('active');
+        currentStep++;
+        document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
+        updateProgress();
+        updateButtons();
+        document.querySelector('.content').scrollTop = 0;
+    }
 
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                const swCode = `
-                    self.addEventListener('install', (e) => {
-                        e.waitUntil(
-                            caches.open('system22-v1').then((cache) => cache.addAll(['/']))
-                        );
-                    });
-                    self.addEventListener('fetch', (e) => {
-                        e.respondWith(
-                            caches.match(e.request).then((response) => response || fetch(e.request))
-                        );
-                    });
-                `;
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-                navigator.serviceWorker.register(swUrl);
+    function previousStep() {
+        if (currentStep === 1) return;
+        document.querySelector(`[data-step="${currentStep}"]`).classList.remove('active');
+        currentStep--;
+        document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
+        updateProgress();
+        updateButtons();
+        document.querySelector('.content').scrollTop = 0;
+    }
+
+    function showReview() {
+        const reviewContent = document.getElementById('reviewContent');
+        reviewContent.innerHTML = `
+            <div class="review-item">
+                <div class="review-item-header">
+                    <span class="review-label">Language</span>
+                    <span class="edit-link" onclick="goToStep(1)">Edit</span>
+                </div>
+                <div class="review-value">${config.LANGUAGE}</div>
+            </div>
+            <div class="review-item">
+                <div class="review-item-header">
+                    <span class="review-label">Assistant Name</span>
+                    <span class="edit-link" onclick="goToStep(2)">Edit</span>
+                </div>
+                <div class="review-value">${config.ASSISTANT_NAME}</div>
+            </div>
+            <div class="review-item">
+                <div class="review-item-header">
+                    <span class="review-label">Business Name</span>
+                    <span class="edit-link" onclick="goToStep(3)">Edit</span>
+                </div>
+                <div class="review-value">${config.BUSINESS_NAME || 'Not provided'}</div>
+            </div>
+            <!-- Add other review items as needed -->
+        `;
+    }
+
+    function goToStep(step) {
+        document.querySelector(`[data-step="${currentStep}"]`).classList.remove('active');
+        currentStep = step;
+        document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
+        updateProgress();
+        updateButtons();
+        document.querySelector('.content').scrollTop = 0;
+    }
+
+    async function submitOnboarding() {
+        try {
+            const response = await fetch('https://augustly-nonevincible-samual.ngrok-free.dev/onboard', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
             });
+            if (response.ok) {
+                document.getElementById('modalMessage').textContent = 
+                    'Setup complete! Your assistant is ready. Check back later for generated items.';
+                document.getElementById('successModal').classList.add('active');
+            } else {
+                throw new Error('Server error');
+            }
+        } catch (error) {
+            document.getElementById('modalMessage').textContent = 
+                'Error submitting setup. Check connection and try again.';
+            document.getElementById('successModal').classList.add('active');
         }
-    </script>
-</body>
-</html>
+    }
+
+    function closeModal() {
+        document.getElementById('successModal').classList.remove('active');
+    }
+
+    // PWA service worker (keep if you want offline support)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            const swCode = `
+                self.addEventListener('install', e => e.waitUntil(caches.open('system22-v1').then(cache => cache.addAll(['/']))));
+                self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(res => res || fetch(e.request))));
+            `;
+            const blob = new Blob([swCode], {type: 'application/javascript'});
+            navigator.serviceWorker.register(URL.createObjectURL(blob));
+        });
+    }
+</script>
